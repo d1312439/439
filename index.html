@@ -1,0 +1,772 @@
+
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Vorlage</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+            background-color: #303030;
+        }
+        .container {
+            max-width: 600px;
+            margin-top: 20px;
+            padding: 20px;
+            background: #4682B4;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .button-group button {
+            flex: 1;
+            padding: 10px;
+            cursor: move;
+            background-color: #39ff14;
+            color: #2f2f2f;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .button-group button:hover {
+            background-color: #2ecc71;
+            transform: scale(1.1);
+        }
+        #output {
+            width: calc(100% - 40px);
+            height: 100px;
+            margin-top: 10px;
+            padding: 10px;
+            resize: none;
+            text-align: left;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .action-buttons button {
+            flex: 1;
+            padding: 10px;
+            cursor: pointer;
+            background-color: #39ff14;
+            color: #2f2f2f;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .action-buttons button:hover {
+            background-color: #2ecc71;
+            transform: scale(1.05);
+        }
+        .top-actions {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        .popup {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .popup-content {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 100%;
+            position: relative;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        #collageItems {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .collage-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .collage-item img {
+            max-width: 100%;
+            max-height: 200px;
+            height: auto;
+            cursor: pointer;
+        }
+        .collage-item button {
+            margin-top: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .collage-item button:hover {
+            background-color: #cc0000;
+        }
+        #imageModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #modalImage {
+            max-width: 90%;
+            max-height: 90%;
+        }
+        .close-btn-modal {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 24px;
+            color: #fff;
+            background: #000;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .tab-bar {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .tab-bar button {
+            position: relative;
+            padding: 10px;
+            background-color: #39ff14;
+            color: #2f2f2f;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .tab-bar button:hover {
+            background-color: #2ecc71;
+        }
+        .tab-bar button.active {
+            background-color: #2ecc71;
+            font-weight: bold;
+        }
+        .delete-tab {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="tab-bar">
+    <!-- Tab-Buttons werden dynamisch hinzugefügt -->
+</div>
+
+<div class="top-actions">
+    <button onclick="downloadState()">Download Speicherdatei</button>
+    <button onclick="triggerUpload()">Upload Speicherdatei</button>
+    <input type="file" id="uploadInput" style="display: none;" onchange="handleFileUpload(event)">
+</div>
+
+<div class="container">
+    <h2>Text Vorlage</h2>
+    <div class="button-group" id="templateButtons"></div>
+    <textarea id="output" placeholder="Hier wird der Text angezeigt..."></textarea>
+    <div class="action-buttons">
+        <button onclick="clearText()">Text löschen</button>
+        <button onclick="copyText()">Text kopieren</button>
+        <button onclick="showCustomizationWindow()">Vorlagen anpassen</button>
+        <button onclick="showNewButtonWindow()">Neuen Button erstellen</button>
+        <button onclick="showDeleteButtonWindow()">Button löschen</button>
+        <button onclick="showDesignEditWindow()">Design bearbeiten</button>
+        <button onclick="showAddImagePopup()">Bild hinzufügen</button>
+        <button onclick="showCollagePopup()">Bilder anzeigen</button>
+    </div>
+</div>
+
+<!-- Popup für Bild hinzufügen -->
+<div class="popup" id="addImagePopup">
+    <div class="popup-content">
+        <span class="close-btn" onclick="hideAddImagePopup()">×</span>
+        <h3>Bild hinzufügen</h3>
+        <input type="file" id="imageUpload" accept="image/*">
+        <textarea id="imageText" placeholder="Text unter dem Bild..."></textarea>
+        <div class="action-buttons">
+            <button onclick="saveImageAndText()">Speichern</button>
+            <button onclick="hideAddImagePopup()">Abbrechen</button>
+        </div>
+    </div>
+</div>
+
+<!-- Popup für Collage anzeigen -->
+<div class="popup" id="collagePopup">
+    <div class="popup-content">
+        <span class="close-btn" onclick="hideCollagePopup()">×</span>
+        <h3>Collage</h3>
+        <div id="collageItems"></div>
+    </div>
+</div>
+
+<!-- Modal für vergrößertes Bild -->
+<div id="imageModal" onclick="closeImageModal(event)">
+    <span class="close-btn-modal" onclick="closeImageModal(event)">×</span>
+    <img id="modalImage" src="" alt="Vergrößertes Bild">
+</div>
+
+<!-- Bestehende Fenster -->
+<div class="container" id="designEditWindow" style="display: none;">
+    <h3>Design bearbeiten</h3>
+    <label for="backgroundColor">Hintergrundfarbe:</label>
+    <input type="color" id="backgroundColor" value="#303030">
+    <label for="buttonColor">Buttonfarbe:</label>
+    <input type="color" id="buttonColor" value="#39ff14">
+    <label for="guiColor">GUI-Bereichsfarbe:</label>
+    <input type="color" id="guiColor" value="#4682B4">
+    <div class="action-buttons">
+        <button onclick="applyDesignChanges()">Übernehmen</button>
+        <button onclick="hideDesignEditWindow()">Abbrechen</button>
+    </div>
+</div>
+
+<div class="container" id="newButtonWindow" style="display: none;">
+    <h3>Neuen Button erstellen</h3>
+    <input type="text" id="newButtonName" placeholder="Button-Name...">
+    <textarea id="newButtonText" placeholder="Text für neuen Button..."></textarea>
+    <div class="action-buttons">
+        <button onclick="createNewButton()">Erstellen</button>
+        <button onclick="hideNewButtonWindow()">Abbrechen</button>
+    </div>
+</div>
+
+<div class="container" id="deleteButtonWindow" style="display: none;">
+    <h3>Button löschen</h3>
+    <label for="deleteButtonSelect">Zu löschenden Button wählen:</label>
+    <select id="deleteButtonSelect"></select>
+    <div class="action-buttons">
+        <button onclick="deleteButton()">Löschen</button>
+        <button onclick="hideDeleteButtonWindow()">Abbrechen</button>
+    </div>
+</div>
+
+<div class="container" id="customizationWindow" style="display: none;">
+    <h3>Vorlagen anpassen</h3>
+    <label for="templateSelect">Vorlage wählen:</label>
+    <select id="templateSelect" onchange="loadSelectedTemplate()"></select>
+    <input type="text" id="newButtonLabel" placeholder="Button-Name anpassen...">
+    <textarea id="customText" placeholder="Angepasster Text..."></textarea>
+    <div class="action-buttons">
+        <button onclick="saveCustomText()">Speichern</button>
+        <button onclick="hideCustomizationWindow()">Abbrechen</button>
+    </div>
+</div>
+
+<!-- Popup für neuen Tab -->
+<div class="popup" id="addTabPopup">
+    <div class="popup-content">
+        <span class="close-btn" onclick="hideAddTabPopup()">×</span>
+        <h3>Neuen Tab erstellen</h3>
+        <input type="text" id="newTabName" placeholder="Tab-Name...">
+        <div class="action-buttons">
+            <button onclick="addNewTab()">Erstellen</button>
+            <button onclick="hideAddTabPopup()">Abbrechen</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Datenstrukturen
+let tabs = {
+    "Abteilung 1": {
+        buttonTexts: {},
+        buttonOrder: [],
+        collageItems: []
+    },
+    "Abteilung 2": {
+        buttonTexts: {},
+        buttonOrder: [],
+        collageItems: []
+    }
+};
+let currentTab = "Abteilung 1"; // Standard-Tab beim Start
+
+let colors = {
+    backgroundColor: "#303030",
+    buttonColor: "#39ff14",
+    guiColor: "#4682B4"
+};
+
+// Laden der gespeicherten Daten
+function loadAppState() {
+    const savedTabs = localStorage.getItem("tabs");
+    if (savedTabs) tabs = JSON.parse(savedTabs);
+    const savedCurrentTab = localStorage.getItem("currentTab");
+    if (savedCurrentTab && tabs[savedCurrentTab]) currentTab = savedCurrentTab;
+    const savedColors = localStorage.getItem("colors");
+    if (savedColors) colors = JSON.parse(savedColors);
+    loadTabData();
+    updateTabBar();
+}
+
+// Speichern der Daten
+function saveAppState() {
+    localStorage.setItem("tabs", JSON.stringify(tabs));
+    localStorage.setItem("currentTab", currentTab);
+    localStorage.setItem("colors", JSON.stringify(colors));
+}
+
+// Tab-Funktionen
+function switchTab(tabName) {
+    if (tabs[tabName]) {
+        currentTab = tabName;
+        loadTabData();
+        updateTabBar();
+    }
+}
+
+function loadTabData() {
+    const tabData = tabs[currentTab];
+    createButtons();
+    document.getElementById("output").value = "";
+    applyColors();
+}
+
+function updateTabBar() {
+    const tabBar = document.querySelector(".tab-bar");
+    tabBar.innerHTML = "";
+    Object.keys(tabs).forEach(tabName => {
+        const tabButton = document.createElement("button");
+        tabButton.textContent = tabName;
+        tabButton.onclick = function() { switchTab(tabName); };
+        if (tabName === currentTab) {
+            tabButton.classList.add("active");
+        }
+        // Löschen-Button hinzufügen
+        const deleteButton = document.createElement("span");
+        deleteButton.textContent = "×";
+        deleteButton.className = "delete-tab";
+        deleteButton.onclick = (event) => {
+            event.stopPropagation(); // Verhindert Tab-Wechsel beim Klick auf "×"
+            removeTab(tabName);
+        };
+        tabButton.appendChild(deleteButton);
+        tabBar.appendChild(tabButton);
+    });
+    const addTabButton = document.createElement("button");
+    addTabButton.textContent = "Neuen Tab hinzufügen";
+    addTabButton.onclick = showAddTabPopup;
+    tabBar.appendChild(addTabButton);
+}
+
+function removeTab(tabName) {
+    if (Object.keys(tabs).length === 1) {
+        alert("Du kannst den letzten Tab nicht löschen!");
+        return;
+    }
+    if (confirm(`Möchtest du den Tab "${tabName}" wirklich löschen?`)) {
+        delete tabs[tabName];
+        if (currentTab === tabName) {
+            currentTab = Object.keys(tabs)[0]; // Wechsel zum ersten verbleibenden Tab
+        }
+        saveAppState();
+        loadTabData();
+        updateTabBar();
+        alert(`Tab "${tabName}" wurde erfolgreich entfernt.`);
+    }
+}
+
+function showAddTabPopup() {
+    document.getElementById("addTabPopup").style.display = "flex";
+}
+
+function hideAddTabPopup() {
+    document.getElementById("addTabPopup").style.display = "none";
+    document.getElementById("newTabName").value = "";
+}
+
+function addNewTab() {
+    const tabName = document.getElementById("newTabName").value.trim();
+    if (tabName && !tabs[tabName]) {
+        tabs[tabName] = {
+            buttonTexts: {},
+            buttonOrder: [],
+            collageItems: []
+        };
+        saveAppState();
+        switchTab(tabName);
+        hideAddTabPopup();
+    } else {
+        alert("Bitte einen eindeutigen Tab-Namen eingeben.");
+    }
+}
+
+// Text anzeigen
+function showText(buttonKey) {
+    const tabData = tabs[currentTab];
+    document.getElementById("output").value = tabData.buttonTexts[buttonKey] || "";
+}
+
+// Textfeld leeren
+function clearText() {
+    document.getElementById("output").value = "";
+}
+
+// Text kopieren
+function copyText() {
+    const output = document.getElementById("output");
+    output.select();
+    document.execCommand("copy");
+}
+
+// Buttons dynamisch erstellen
+function createButtons() {
+    const tabData = tabs[currentTab];
+    const buttonGroup = document.getElementById("templateButtons");
+    buttonGroup.innerHTML = "";
+    
+    tabData.buttonOrder.forEach(key => {
+        if (tabData.buttonTexts[key]) {
+            let button = document.createElement("button");
+            button.textContent = key;
+            button.dataset.key = key;
+            button.draggable = true;
+            button.style.backgroundColor = colors.buttonColor;
+            
+            button.addEventListener("dragstart", dragStart);
+            button.addEventListener("dragover", dragOver);
+            button.addEventListener("drop", drop);
+            button.addEventListener("dragend", dragEnd);
+            button.addEventListener("click", () => showText(key));
+            
+            buttonGroup.appendChild(button);
+        }
+    });
+    updateActionButtons();
+}
+
+// Drag-and-Drop-Funktionen
+let draggedButton = null;
+
+function dragStart(e) {
+    draggedButton = e.target;
+    e.dataTransfer.setData("text/plain", e.target.dataset.key);
+}
+
+function dragOver(e) {
+    e.preventDefault();
+}
+
+function drop(e) {
+    e.preventDefault();
+    const tabData = tabs[currentTab];
+    const targetButton = e.target.closest("button");
+    if (targetButton && draggedButton !== targetButton) {
+        const draggedKey = draggedButton.dataset.key;
+        const targetKey = targetButton.dataset.key;
+
+        const draggedIndex = tabData.buttonOrder.indexOf(draggedKey);
+        tabData.buttonOrder.splice(draggedIndex, 1);
+
+        const targetIndex = tabData.buttonOrder.indexOf(targetKey);
+        if (draggedIndex < targetIndex) {
+            tabData.buttonOrder.splice(targetIndex + 1, 0, draggedKey);
+        } else {
+            tabData.buttonOrder.splice(targetIndex, 0, draggedKey);
+        }
+
+        if (draggedIndex < targetIndex) {
+            targetButton.after(draggedButton);
+        } else {
+            targetButton.before(draggedButton);
+        }
+
+        saveAppState();
+    }
+}
+
+function dragEnd(e) {
+    draggedButton = null;
+}
+
+// Action-Buttons aktualisieren
+function updateActionButtons() {
+    const actionButtons = document.querySelectorAll('.action-buttons button');
+    actionButtons.forEach(button => {
+        button.style.backgroundColor = colors.buttonColor;
+    });
+}
+
+// Design-Funktionen
+function showDesignEditWindow() { document.getElementById("designEditWindow").style.display = "block"; }
+function hideDesignEditWindow() { document.getElementById("designEditWindow").style.display = "none"; }
+function applyDesignChanges() {
+    colors.backgroundColor = document.getElementById("backgroundColor").value;
+    colors.buttonColor = document.getElementById("buttonColor").value;
+    colors.guiColor = document.getElementById("guiColor").value;
+    applyColors();
+    saveAppState();
+    hideDesignEditWindow();
+}
+function applyColors() {
+    document.body.style.backgroundColor = colors.backgroundColor;
+    document.querySelectorAll(".container").forEach(container => container.style.backgroundColor = colors.guiColor);
+    createButtons();
+}
+
+// Neuen Button erstellen
+function showNewButtonWindow() { document.getElementById("newButtonWindow").style.display = "block"; }
+function hideNewButtonWindow() { document.getElementById("newButtonWindow").style.display = "none"; }
+function createNewButton() {
+    const tabData = tabs[currentTab];
+    const newButtonName = document.getElementById("newButtonName").value;
+    const newButtonText = document.getElementById("newButtonText").value;
+    if (newButtonName && newButtonText) {
+        tabData.buttonTexts[newButtonName] = newButtonText;
+        tabData.buttonOrder.push(newButtonName);
+        saveAppState();
+        createButtons();
+        hideNewButtonWindow();
+    }
+}
+
+// Vorlagen anpassen
+function showCustomizationWindow() {
+    document.getElementById("customizationWindow").style.display = "block";
+    const tabData = tabs[currentTab];
+    const templateSelect = document.getElementById("templateSelect");
+    templateSelect.innerHTML = "";
+    tabData.buttonOrder.forEach(key => {
+        if (tabData.buttonTexts[key]) {
+            let option = document.createElement("option");
+            option.value = key;
+            option.textContent = key;
+            templateSelect.appendChild(option);
+        }
+    });
+    loadSelectedTemplate();
+}
+function loadSelectedTemplate() {
+    const tabData = tabs[currentTab];
+    const selectedTemplate = document.getElementById("templateSelect").value;
+    document.getElementById("newButtonLabel").value = selectedTemplate;
+    document.getElementById("customText").value = tabData.buttonTexts[selectedTemplate];
+}
+function saveCustomText() {
+    const tabData = tabs[currentTab];
+    const selectedTemplate = document.getElementById("templateSelect").value;
+    const newLabel = document.getElementById("newButtonLabel").value;
+    const customText = document.getElementById("customText").value;
+
+    if (newLabel && newLabel !== selectedTemplate) {
+        tabData.buttonTexts[newLabel] = customText;
+        delete tabData.buttonTexts[selectedTemplate];
+        const index = tabData.buttonOrder.indexOf(selectedTemplate);
+        if (index !== -1) tabData.buttonOrder[index] = newLabel;
+    } else {
+        tabData.buttonTexts[selectedTemplate] = customText;
+    }
+    saveAppState();
+    hideCustomizationWindow();
+    createButtons();
+}
+function hideCustomizationWindow() { document.getElementById("customizationWindow").style.display = "none"; }
+
+// Button löschen
+function showDeleteButtonWindow() {
+    document.getElementById("deleteButtonWindow").style.display = "block";
+    const tabData = tabs[currentTab];
+    const deleteButtonSelect = document.getElementById("deleteButtonSelect");
+    deleteButtonSelect.innerHTML = "";
+    tabData.buttonOrder.forEach(key => {
+        if (tabData.buttonTexts[key]) {
+            let option = document.createElement("option");
+            option.value = key;
+            option.textContent = key;
+            deleteButtonSelect.appendChild(option);
+        }
+    });
+}
+function hideDeleteButtonWindow() { document.getElementById("deleteButtonWindow").style.display = "none"; }
+function deleteButton() {
+    const tabData = tabs[currentTab];
+    const selectedButton = document.getElementById("deleteButtonSelect").value;
+    if (selectedButton) {
+        delete tabData.buttonTexts[selectedButton];
+        tabData.buttonOrder = tabData.buttonOrder.filter(key => key !== selectedButton);
+        saveAppState();
+        createButtons();
+        hideDeleteButtonWindow();
+    }
+}
+
+// Datei herunterladen/uploaden
+function downloadState() {
+    const blob = new Blob([JSON.stringify({ tabs, currentTab, colors })], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'speicherdatei.json';
+    link.click();
+}
+function triggerUpload() { document.getElementById("uploadInput").click(); }
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (file && file.type === 'application/json') {
+        const reader = new FileReader();
+        reader.onload = function() {
+            try {
+                const data = JSON.parse(reader.result);
+                if (data.tabs && data.colors) {
+                    tabs = data.tabs;
+                    currentTab = data.currentTab || Object.keys(tabs)[0];
+                    colors = data.colors;
+                    saveAppState();
+                    loadAppState();
+                    alert("Daten erfolgreich geladen.");
+                } else {
+                    alert("Ungültige JSON-Struktur. Bitte überprüfen Sie die Datei.");
+                }
+            } catch (e) {
+                alert("Fehler beim Laden der JSON-Datei: " + e.message);
+            }
+        };
+        reader.readAsText(file);
+    } else {
+        alert("Bitte eine gültige JSON-Datei auswählen.");
+    }
+}
+
+// Collage-Funktionen
+function showAddImagePopup() { document.getElementById("addImagePopup").style.display = "flex"; }
+function hideAddImagePopup() {
+    document.getElementById("addImagePopup").style.display = "none";
+    document.getElementById("imageUpload").value = "";
+    document.getElementById("imageText").value = "";
+}
+function saveImageAndText() {
+    const tabData = tabs[currentTab];
+    const fileInput = document.getElementById("imageUpload");
+    const text = document.getElementById("imageText").value;
+    if (fileInput.files.length > 0 && text) {
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        reader.onload = function() {
+            const base64Image = reader.result;
+            tabData.collageItems.push({ image: base64Image, text: text });
+            saveAppState();
+            hideAddImagePopup();
+            alert("Bild und Text wurden gespeichert.");
+        };
+        reader.readAsDataURL(file);
+    } else {
+        alert("Bitte ein Bild auswählen und einen Text eingeben.");
+    }
+}
+function showCollagePopup() {
+    displayCollage();
+    document.getElementById("collagePopup").style.display = "flex";
+}
+function hideCollagePopup() { document.getElementById("collagePopup").style.display = "none"; }
+function displayCollage() {
+    const tabData = tabs[currentTab];
+    const collageDiv = document.getElementById("collageItems");
+    collageDiv.innerHTML = "";
+    tabData.collageItems.forEach((item, index) => {
+        const itemDiv = document.createElement("div");
+        itemDiv.className = "collage-item";
+        const img = document.createElement("img");
+        img.src = item.image;
+        img.alt = "Collage Bild";
+        img.onclick = function() { openImageModal(item.image); };
+        const textP = document.createElement("p");
+        textP.textContent = item.text;
+        const removeButton = document.createElement("button");
+        removeButton.textContent = "Entfernen";
+        removeButton.style.backgroundColor = "#ff4444";
+        removeButton.style.color = "#fff";
+        removeButton.style.border = "none";
+        removeButton.style.borderRadius = "5px";
+        removeButton.style.padding = "5px 10px";
+        removeButton.style.cursor = "pointer";
+        removeButton.onclick = function() { removeCollageItem(index); };
+        itemDiv.appendChild(img);
+        itemDiv.appendChild(textP);
+        itemDiv.appendChild(removeButton);
+        collageDiv.appendChild(itemDiv);
+    });
+}
+function removeCollageItem(index) {
+    const tabData = tabs[currentTab];
+    if (confirm("Möchtest du dieses Bild wirklich entfernen?")) {
+        tabData.collageItems.splice(index, 1);
+        saveAppState();
+        displayCollage();
+    }
+}
+
+// Modal-Funktionen für vergrößertes Bild
+function openImageModal(imageSrc) {
+    const modal = document.getElementById("imageModal");
+    const modalImg = document.getElementById("modalImage");
+    modalImg.src = imageSrc;
+    modal.style.display = "flex";
+}
+function closeImageModal(event) {
+    const modal = document.getElementById("imageModal");
+    if (event.target === modal || event.target.classList.contains("close-btn-modal")) {
+        modal.style.display = "none";
+    }
+}
+
+// Initialisierung
+loadAppState();
+</script>
+
+</body>
+</html>
