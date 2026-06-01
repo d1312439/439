@@ -481,7 +481,7 @@ function clearText() {
     document.getElementById("output").innerHTML = "";
 }
 
-// Text kopieren (Kopiert das HTML mit, ohne nerviges Popup-Fenster)
+// Text kopieren (Kopiert das HTML mit, damit Formatierung in Outlook, Word etc. erhalten bleibt)
 function copyText() {
     const output = document.getElementById("output");
     const range = document.createRange();
@@ -491,7 +491,7 @@ function copyText() {
     selection.addRange(range);
     try {
         document.execCommand("copy");
-        // Die alert-Meldung wurde hier entfernt
+        alert("Text inklusive Links und Formatierung kopiert!");
     } catch (err) {
         alert("Fehler beim Kopieren.");
     }
