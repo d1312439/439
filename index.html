@@ -229,9 +229,26 @@
             cursor: pointer;
             font-size: 12px;
         }
+
+        /* Das neue, automatische Kopier-Banner */
+        .copy-toast {
+            display: none;
+            position: fixed;
+            top: 20px;
+            background-color: #2ecc71;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            font-weight: bold;
+            z-index: 9999;
+            transition: opacity 0.2s ease;
+        }
     </style>
 </head>
 <body>
+
+<div id="copyToast" class="copy-toast">Text kopiert!</div>
 
 <div class="tab-bar-parent">
     <div class="tab-bar">
@@ -445,43 +462,26 @@ function removeTab(tabName) {
     }
 }
 
-function showAddTabPopup() {
-    document.getElementById("addTabPopup").style.display = "flex";
-}
-
-function hideAddTabPopup() {
-    document.getElementById("addTabPopup").style.display = "none";
-    document.getElementById("newTabName").value = "";
-}
+// ... Rest des Codes bleibt absolut identisch ...
+function showAddTabPopup() { document.getElementById("addTabPopup").style.display = "flex"; }
+function hideAddTabPopup() { document.getElementById("addTabPopup").style.display = "none"; document.getElementById("newTabName").value = ""; }
 
 function addNewTab() {
     const tabName = document.getElementById("newTabName").value.trim();
     if (tabName && !tabs[tabName]) {
-        tabs[tabName] = {
-            buttonTexts: {},
-            buttonOrder: [],
-            collageItems: []
-        };
-        saveAppState();
-        switchTab(tabName);
-        hideAddTabPopup();
-    } else {
-        alert("Bitte einen eindeutigen Tab-Namen eingeben.");
-    }
+        tabs[tabName] = { buttonTexts: {}, buttonOrder: [], collageItems: [] };
+        saveAppState(); switchTab(tabName); hideAddTabPopup();
+    } else { alert("Bitte einen eindeutigen Tab-Namen eingeben."); }
 }
 
-// Text anzeigen (Nutzt .innerHTML, damit HTML/Links gerendert werden)
 function showText(buttonKey) {
     const tabData = tabs[currentTab];
     document.getElementById("output").innerHTML = tabData.buttonTexts[buttonKey] || "";
 }
 
-// Textfeld leeren
-function clearText() {
-    document.getElementById("output").innerHTML = "";
-}
+function clearText() { document.getElementById("output").innerHTML = ""; }
 
-// Text kopieren (Kopiert das HTML mit, damit Formatierung in Outlook, Word etc. erhalten bleibt)
+// Text kopieren (Kombiniert deine stabile Methode mit dem 1-Sekunden-Timer)
 function copyText() {
     const output = document.getElementById("output");
     const range = document.createRange();
@@ -489,101 +489,79 @@ function copyText() {
     const selection = window.getSelection();
     selection.removeAllRanges();
     selection.addRange(range);
+    
     try {
+        // Deine funktionierende Methode ausführen
         document.execCommand("copy");
-        alert("Text inklusive Links und Formatierung kopiert!");
+        
+        // Jetzt das schicke Banner oben anzeigen
+        const toast = document.getElementById("copyToast");
+        toast.style.display = "block";
+        toast.style.opacity = "1";
+
+        // Nach exakt 1 Sekunde (1000 Millisekunden) wieder ausblenden
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            setTimeout(() => { toast.style.display = "none"; }, 200);
+        }, 1000);
+
     } catch (err) {
         alert("Fehler beim Kopieren.");
     }
     selection.removeAllRanges();
 }
 
-// Buttons dynamisch erstellen
 function createButtons() {
     const tabData = tabs[currentTab];
     const buttonGroup = document.getElementById("templateButtons");
     buttonGroup.innerHTML = "";
-        
     tabData.buttonOrder.forEach(key => {
         if (tabData.buttonTexts[key]) {
             let button = document.createElement("button");
-            button.textContent = key;
-            button.dataset.key = key;
-            button.draggable = true;
+            button.textContent = key; button.dataset.key = key; button.draggable = true;
             button.style.backgroundColor = colors.buttonColor;
-                        
             button.addEventListener("dragstart", dragStart);
             button.addEventListener("dragover", dragOver);
             button.addEventListener("drop", drop);
             button.addEventListener("dragend", dragEnd);
             button.addEventListener("click", () => showText(key));
-                        
             buttonGroup.appendChild(button);
         }
     });
     updateActionButtons();
 }
 
-// Drag-and-Drop-Funktionen
 let draggedButton = null;
-
-function dragStart(e) {
-    draggedButton = e.target;
-    e.dataTransfer.setData("text/plain", e.target.dataset.key);
-}
-
-function dragOver(e) {
-    e.preventDefault();
-}
-
+function dragStart(e) { draggedButton = e.target; e.dataTransfer.setData("text/plain", e.target.dataset.key); }
+function dragOver(e) { e.preventDefault(); }
 function drop(e) {
     e.preventDefault();
     const tabData = tabs[currentTab];
     const targetButton = e.target.closest("button");
     if (targetButton && draggedButton !== targetButton) {
-        const draggedKey = draggedButton.dataset.key;
-        const targetKey = targetButton.dataset.key;
-
-        const draggedIndex = tabData.buttonOrder.indexOf(draggedKey);
-        tabData.buttonOrder.splice(draggedIndex, 1);
-
+        const draggedKey = draggedButton.dataset.key; const targetKey = targetButton.dataset.key;
+        const draggedIndex = tabData.buttonOrder.indexOf(draggedKey); tabData.buttonOrder.splice(draggedIndex, 1);
         const targetIndex = tabData.buttonOrder.indexOf(targetKey);
-        if (draggedIndex < targetIndex) {
-            tabData.buttonOrder.splice(targetIndex + 1, 0, draggedKey);
-        } else {
-            tabData.buttonOrder.splice(targetIndex, 0, draggedKey);
-        }
-
-        if (draggedIndex < targetIndex) {
-            targetButton.after(draggedButton);
-        } else {
-            targetButton.before(draggedButton);
-        }
+        if (draggedIndex < targetIndex) { tabData.buttonOrder.splice(targetIndex + 1, 0, draggedKey); } 
+        else { tabData.buttonOrder.splice(targetIndex, 0, draggedKey); }
+        if (draggedIndex < targetIndex) { targetButton.after(draggedButton); } 
+        else { targetButton.before(draggedButton); }
         saveAppState();
     }
 }
-
-function dragEnd(e) {
-    draggedButton = null;
-}
-
+function dragEnd(e) { draggedButton = null; }
 function updateActionButtons() {
     const actionButtons = document.querySelectorAll('.action-buttons button');
-    actionButtons.forEach(button => {
-        button.style.backgroundColor = colors.buttonColor;
-    });
+    actionButtons.forEach(button => { button.style.backgroundColor = colors.buttonColor; });
 }
 
-// Design-Funktionen
 function showDesignEditWindow() { document.getElementById("designEditWindow").style.display = "block"; }
 function hideDesignEditWindow() { document.getElementById("designEditWindow").style.display = "none"; }
 function applyDesignChanges() {
     colors.backgroundColor = document.getElementById("backgroundColor").value;
     colors.buttonColor = document.getElementById("buttonColor").value;
     colors.guiColor = document.getElementById("guiColor").value;
-    applyColors();
-    saveAppState();
-    hideDesignEditWindow();
+    applyColors(); saveAppState(); hideDesignEditWindow();
 }
 function applyColors() {
     document.body.style.backgroundColor = colors.backgroundColor;
@@ -591,105 +569,69 @@ function applyColors() {
     createButtons();
 }
 
-// Neuen Button erstellen
-function showNewButtonWindow() { 
-    document.getElementById("newButtonWindow").style.display = "block"; 
-    document.getElementById("newButtonText").innerHTML = ""; 
-}
+function showNewButtonWindow() { document.getElementById("newButtonWindow").style.display = "block"; document.getElementById("newButtonText").innerHTML = ""; }
 function hideNewButtonWindow() { document.getElementById("newButtonWindow").style.display = "none"; }
 function createNewButton() {
     const tabData = tabs[currentTab];
     const newButtonName = document.getElementById("newButtonName").value;
     const newButtonText = document.getElementById("newButtonText").innerHTML; 
     if (newButtonName && newButtonText) {
-        tabData.buttonTexts[newButtonName] = newButtonText;
-        tabData.buttonOrder.push(newButtonName);
-        saveAppState();
-        createButtons();
-        hideNewButtonWindow();
-        document.getElementById("newButtonName").value = "";
+        tabData.buttonTexts[newButtonName] = newButtonText; tabData.buttonOrder.push(newButtonName);
+        saveAppState(); createButtons(); hideNewButtonWindow(); document.getElementById("newButtonName").value = "";
     }
 }
 
-// Vorlagen anpassen
 function showCustomizationWindow() {
     document.getElementById("customizationWindow").style.display = "block";
-    const tabData = tabs[currentTab];
-    const templateSelect = document.getElementById("templateSelect");
+    const tabData = tabs[currentTab]; const templateSelect = document.getElementById("templateSelect");
     templateSelect.innerHTML = "";
     tabData.buttonOrder.forEach(key => {
         if (tabData.buttonTexts[key]) {
-            let option = document.createElement("option");
-            option.value = key;
-            option.textContent = key;
-            templateSelect.appendChild(option);
+            let option = document.createElement("option"); option.value = key; option.textContent = key; templateSelect.appendChild(option);
         }
     });
     loadSelectedTemplate();
 }
 function loadSelectedTemplate() {
-    const tabData = tabs[currentTab];
-    const selectedTemplate = document.getElementById("templateSelect").value;
+    const tabData = tabs[currentTab]; const selectedTemplate = document.getElementById("templateSelect").value;
     if(selectedTemplate) {
         document.getElementById("newButtonLabel").value = selectedTemplate;
         document.getElementById("customText").innerHTML = tabData.buttonTexts[selectedTemplate]; 
     }
 }
 function saveCustomText() {
-    const tabData = tabs[currentTab];
-    const selectedTemplate = document.getElementById("templateSelect").value;
-    const newLabel = document.getElementById("newButtonLabel").value;
-    const customText = document.getElementById("customText").innerHTML; 
-
+    const tabData = tabs[currentTab]; const selectedTemplate = document.getElementById("templateSelect").value;
+    const newLabel = document.getElementById("newButtonLabel").value; const customText = document.getElementById("customText").innerHTML; 
     if (newLabel && newLabel !== selectedTemplate) {
-        tabData.buttonTexts[newLabel] = customText;
-        delete tabData.buttonTexts[selectedTemplate];
-        const index = tabData.buttonOrder.indexOf(selectedTemplate);
-        if (index !== -1) tabData.buttonOrder[index] = newLabel;
-    } else {
-        tabData.buttonTexts[selectedTemplate] = customText;
-    }
-    saveAppState();
-    hideCustomizationWindow();
-    createButtons();
+        tabData.buttonTexts[newLabel] = customText; delete tabData.buttonTexts[selectedTemplate];
+        const index = tabData.buttonOrder.indexOf(selectedTemplate); if (index !== -1) tabData.buttonOrder[index] = newLabel;
+    } else { tabData.buttonTexts[selectedTemplate] = customText; }
+    saveAppState(); hideCustomizationWindow(); createButtons();
 }
 function hideCustomizationWindow() { document.getElementById("customizationWindow").style.display = "none"; }
 
-// Button löschen
 function showDeleteButtonWindow() {
     document.getElementById("deleteButtonWindow").style.display = "block";
-    const tabData = tabs[currentTab];
-    const deleteButtonSelect = document.getElementById("deleteButtonSelect");
+    const tabData = tabs[currentTab]; const deleteButtonSelect = document.getElementById("deleteButtonSelect");
     deleteButtonSelect.innerHTML = "";
     tabData.buttonOrder.forEach(key => {
         if (tabData.buttonTexts[key]) {
-            let option = document.createElement("option");
-            option.value = key;
-            option.textContent = key;
-            deleteButtonSelect.appendChild(option);
+            let option = document.createElement("option"); option.value = key; option.textContent = key; deleteButtonSelect.appendChild(option);
         }
     });
 }
 function hideDeleteButtonWindow() { document.getElementById("deleteButtonWindow").style.display = "none"; }
 function deleteButton() {
-    const tabData = tabs[currentTab];
-    const selectedButton = document.getElementById("deleteButtonSelect").value;
+    const tabData = tabs[currentTab]; const selectedButton = document.getElementById("deleteButtonSelect").value;
     if (selectedButton) {
-        delete tabData.buttonTexts[selectedButton];
-        tabData.buttonOrder = tabData.buttonOrder.filter(key => key !== selectedButton);
-        saveAppState();
-        createButtons();
-        hideDeleteButtonWindow();
+        delete tabData.buttonTexts[selectedButton]; tabData.buttonOrder = tabData.buttonOrder.filter(key => key !== selectedButton);
+        saveAppState(); createButtons(); hideDeleteButtonWindow();
     }
 }
 
-// Datei herunterladen/uploaden
 function downloadState() {
     const blob = new Blob([JSON.stringify({ tabs, currentTab, colors })], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'speicherdatei.json';
-    link.click();
+    const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'speicherdatei.json'; link.click();
 }
 function triggerUpload() { document.getElementById("uploadInput").click(); }
 function handleFileUpload(event) {
@@ -700,108 +642,51 @@ function handleFileUpload(event) {
             try {
                 const data = JSON.parse(reader.result);
                 if (data.tabs && data.colors) {
-                    tabs = data.tabs;
-                    currentTab = data.currentTab || Object.keys(tabs)[0];
-                    colors = data.colors;
-                    saveAppState();
-                    loadAppState();
-                    alert("Daten erfolgreich geladen.");
-                } else {
-                    alert("Ungültige JSON-Struktur. Bitte überprüfen Sie die Datei.");
-                }
-            } catch (e) {
-                alert("Fehler beim Laden der JSON-Datei: " + e.message);
-            }
+                    tabs = data.tabs; currentTab = data.currentTab || Object.keys(tabs)[0]; colors = data.colors;
+                    saveAppState(); loadAppState(); alert("Daten erfolgreich geladen.");
+                } else { alert("Ungültige JSON-Struktur. Bitte überprüfen Sie die Datei."); }
+            } catch (e) { alert("Fehler beim Laden der JSON-Datei: " + e.message); }
         };
         reader.readAsText(file);
-    } else {
-        alert("Bitte eine gültige JSON-Datei auswählen.");
-    }
+    } else { alert("Bitte eine gültige JSON-Datei auswählen."); }
 }
 
-// Collage-Funktionen
 function showAddImagePopup() { document.getElementById("addImagePopup").style.display = "flex"; }
-function hideAddImagePopup() {
-    document.getElementById("addImagePopup").style.display = "none";
-    document.getElementById("imageUpload").value = "";
-    document.getElementById("imageText").value = "";
-}
+function hideAddImagePopup() { document.getElementById("addImagePopup").style.display = "none"; document.getElementById("imageUpload").value = ""; document.getElementById("imageText").value = ""; }
 function saveImageAndText() {
-    const tabData = tabs[currentTab];
-    const fileInput = document.getElementById("imageUpload");
-    const text = document.getElementById("imageText").value;
+    const tabData = tabs[currentTab]; const fileInput = document.getElementById("imageUpload"); const text = document.getElementById("imageText").value;
     if (fileInput.files.length > 0 && text) {
-        const file = fileInput.files[0];
-        const reader = new FileReader();
+        const file = fileInput.files[0]; const reader = new FileReader();
         reader.onload = function() {
-            const base64Image = reader.result;
-            tabData.collageItems.push({ image: base64Image, text: text });
-            saveAppState();
-            hideAddImagePopup();
-            alert("Bild und Text wurden gespeichert.");
+            const base64Image = reader.result; tabData.collageItems.push({ image: base64Image, text: text });
+            saveAppState(); hideAddImagePopup(); alert("Bild und Text wurden gespeichert.");
         };
         reader.readAsDataURL(file);
-    } else {
-        alert("Bitte ein Bild auswählen und einen Text eingeben.");
-    }
+    } else { alert("Bitte ein Bild auswählen und einen Text eingeben."); }
 }
-function showCollagePopup() {
-    displayCollage();
-    document.getElementById("collagePopup").style.display = "flex";
-}
+function showCollagePopup() { displayCollage(); document.getElementById("collagePopup").style.display = "flex"; }
 function hideCollagePopup() { document.getElementById("collagePopup").style.display = "none"; }
 function displayCollage() {
-    const tabData = tabs[currentTab];
-    const collageDiv = document.getElementById("collageItems");
-    collageDiv.innerHTML = "";
+    const tabData = tabs[currentTab]; const collageDiv = document.getElementById("collageItems"); collageDiv.innerHTML = "";
     tabData.collageItems.forEach((item, index) => {
-        const itemDiv = document.createElement("div");
-        itemDiv.className = "collage-item";
-        const img = document.createElement("img");
-        img.src = item.image;
-        img.alt = "Collage Bild";
-        img.onclick = function() { openImageModal(item.image); };
-        const textP = document.createElement("p");
-        textP.textContent = item.text;
-        const removeButton = document.createElement("button");
-        removeButton.textContent = "Entfernen";
-        removeButton.style.backgroundColor = "#ff4444";
-        removeButton.style.color = "#fff";
-        removeButton.style.border = "none";
-        removeButton.style.borderRadius = "5px";
-        removeButton.style.padding = "5px 10px";
-        removeButton.style.cursor = "pointer";
+        const itemDiv = document.createElement("div"); itemDiv.className = "collage-item";
+        const img = document.createElement("img"); img.src = item.image; img.alt = "Collage Bild"; img.onclick = function() { openImageModal(item.image); };
+        const textP = document.createElement("p"); textP.textContent = item.text;
+        const removeButton = document.createElement("button"); removeButton.textContent = "Entfernen";
+        removeButton.style.backgroundColor = "#ff4444"; removeButton.style.color = "#fff"; removeButton.style.border = "none";
+        removeButton.style.borderRadius = "5px"; removeButton.style.padding = "5px 10px"; removeButton.style.cursor = "pointer";
         removeButton.onclick = function() { removeCollageItem(index); };
-        itemDiv.appendChild(img);
-        itemDiv.appendChild(textP);
-        itemDiv.appendChild(removeButton);
-        collageDiv.appendChild(itemDiv);
+        itemDiv.appendChild(img); itemDiv.appendChild(textP); itemDiv.appendChild(removeButton); collageDiv.appendChild(itemDiv);
     });
 }
 function removeCollageItem(index) {
     const tabData = tabs[currentTab];
-    if (confirm("Möchtest du dieses Bild wirklich entfernen?")) {
-        tabData.collageItems.splice(index, 1);
-        saveAppState();
-        displayCollage();
-    }
+    if (confirm("Möchtest du dieses Bild wirklich entfernen?")) { tabData.collageItems.splice(index, 1); saveAppState(); displayCollage(); }
 }
 
-// Modal-Funktionen für vergrößertes Bild
-function openImageModal(imageSrc) {
-    const modal = document.getElementById("imageModal");
-    const modalImg = document.getElementById("modalImage");
-    modalImg.src = imageSrc;
-    modal.style.display = "flex";
-}
-function closeImageModal(event) {
-    const modal = document.getElementById("imageModal");
-    if (event.target === modal || event.target.classList.contains("close-btn-modal")) {
-        modal.style.display = "none";
-    }
-}
+function openImageModal(imageSrc) { const modal = document.getElementById("imageModal"); const modalImg = document.getElementById("modalImage"); modalImg.src = imageSrc; modal.style.display = "flex"; }
+function closeImageModal(event) { const modal = document.getElementById("imageModal"); if (event.target === modal || event.target.classList.contains("close-btn-modal")) { modal.style.display = "none"; } }
 
-// Initialisierung
 loadAppState();
 </script>
 </body>
